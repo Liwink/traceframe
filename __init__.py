@@ -46,38 +46,40 @@ def cheese(frame=None, slient=False):
 
     for index, start in enumerate(stack):
 
-        if index + 1 < len_stack:
-            start_filename = start.f_code.co_filename
-            start_firstlineno = start.f_code.co_firstlineno
-            start_function = start.f_code.co_name
-            start_lineno = start.f_lineno
-            start_subgraph = subgraph_set[start_filename]
+        if index + 1 == len_stack:
+            break
 
-            end = stack[index + 1]
-            end_filename = end.f_code.co_filename
-            end_firstlineno = end.f_code.co_firstlineno
-            end_function = end.f_code.co_name
-            end_subgraph = subgraph_set[end_filename]
+        start_filename = start.f_code.co_filename
+        start_firstlineno = start.f_code.co_firstlineno
+        start_function = start.f_code.co_name
+        start_lineno = start.f_lineno
+        start_subgraph = subgraph_set[start_filename]
 
-            if index == 0:
-                color = 'green'
-            elif index == len_stack - 2:
-                color = 'red'
-            else:
-                color = 'black'
+        end = stack[index + 1]
+        end_filename = end.f_code.co_filename
+        end_firstlineno = end.f_code.co_firstlineno
+        end_function = end.f_code.co_name
+        end_subgraph = subgraph_set[end_filename]
 
-            G.add_edge(
-                '{0}:{1}:{2}'.format(start_filename,
-                                     start_firstlineno,
-                                     start_function),
-                '{0}:{1}:{2}'.format(end_filename,
-                                     end_firstlineno,
-                                     end_function),
-                color=color,
-                ltail=start_subgraph.name,
-                lhead=end_subgraph.name,
-                label='#{0} at {1}'.format(index + 1, start_lineno)
-            )
+        if index == 0:
+            color = 'green'
+        elif index == len_stack - 2:
+            color = 'red'
+        else:
+            color = 'black'
+
+        G.add_edge(
+            '{0}:{1}:{2}'.format(start_filename,
+                                 start_firstlineno,
+                                 start_function),
+            '{0}:{1}:{2}'.format(end_filename,
+                                 end_firstlineno,
+                                 end_function),
+            color=color,
+            ltail=start_subgraph.name,
+            lhead=end_subgraph.name,
+            label='#{0} at {1}'.format(index + 1, start_lineno)
+        )
 
     fd, name = tempfile.mkstemp('.png')
 
