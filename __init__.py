@@ -1,11 +1,12 @@
 from __future__ import unicode_literals
 
+import sys
+import tempfile
+import webbrowser
+import pygraphviz as pgv
+
 
 def cheese(frame=None, slient=False):
-    import sys
-    import tempfile
-    import webbrowser
-    import pygraphviz as pgv
 
     if not frame:
         frame = sys._getframe().f_back
