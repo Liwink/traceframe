@@ -6,6 +6,12 @@ import webbrowser
 import pygraphviz as pgv
 
 
+def format_node(frame):
+    return '{0}:{1}:{2}'.format(frame.filename,
+                                frame.firstlineno,
+                                frame.function)
+
+
 def cheese(frame=None, slient=False):
 
     if not frame:
@@ -23,7 +29,7 @@ def cheese(frame=None, slient=False):
         firstlineno = frame.f_code.co_firstlineno
         function = frame.f_code.co_name
 
-        node = '{0}:{1}:{2}'.format(filename, firstlineno, function)
+        node = format_node(frame)
         if node not in node_set:
             node_set.add(node)
             if filename not in subgraph_set:
@@ -50,15 +56,11 @@ def cheese(frame=None, slient=False):
             break
 
         start_filename = start.f_code.co_filename
-        start_firstlineno = start.f_code.co_firstlineno
-        start_function = start.f_code.co_name
         start_lineno = start.f_lineno
         start_subgraph = subgraph_set[start_filename]
 
         end = stack[index + 1]
         end_filename = end.f_code.co_filename
-        end_firstlineno = end.f_code.co_firstlineno
-        end_function = end.f_code.co_name
         end_subgraph = subgraph_set[end_filename]
 
         if index == 0:
@@ -69,12 +71,8 @@ def cheese(frame=None, slient=False):
             color = 'black'
 
         G.add_edge(
-            '{0}:{1}:{2}'.format(start_filename,
-                                 start_firstlineno,
-                                 start_function),
-            '{0}:{1}:{2}'.format(end_filename,
-                                 end_firstlineno,
-                                 end_function),
+            format_node(start),
+            format_node(end),
             color=color,
             ltail=start_subgraph.name,
             lhead=end_subgraph.name,
