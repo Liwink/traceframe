@@ -8,15 +8,6 @@ import pygraphviz as pgv
 
 subgraph_set = {}
 G = pgv.AGraph(strict=False, directed=True)
-node_set = set()
-
-
-def _node_exist(frame):
-    node = _format_node(frame)
-    if node in node_set:
-        return True
-    node_set.add(node)
-    return False
 
 
 def _get_subgraph(filename):
@@ -52,24 +43,31 @@ def _format_node(frame):
                                 frame.function)
 
 
+def _frame_stack(frame):
+    node_set = set()
+    stack = []
+
+    while frame:
+        node = _format_node(frame)
+        if node in node_set:
+            continue
+        node_set.add(node)
+
+        stack.insert(0, frame)
+        frame = frame.f_back
+
+    return stack
+
 def cheese(frame=None, slient=False):
 
     if not frame:
         frame = sys._getframe().f_back
 
 
-    stack = []
+    stack = _frame_stack(frame)
 
-    while frame:
-
-        if _node_exist(frame):
-            continue
-
+    for frame in stack:
         _format_subgraph(frame)
-
-        stack.insert(0, frame)
-        frame = frame.f_back
-
 
     len_stack = len(stack)
 
