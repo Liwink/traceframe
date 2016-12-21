@@ -102,3 +102,12 @@ def cheese(frame=None, slient=False):
 
     return name
 
+
+if __name__ == '__main__':
+    # test
+    def outer():
+        def inner():
+            cheese()
+        inner()
+
+    outer()
