@@ -6,7 +6,47 @@ import webbrowser
 import pygraphviz as pgv
 
 
-def format_node(frame):
+subgraph_set = {}
+G = pgv.AGraph(strict=False, directed=True)
+node_set = set()
+
+
+def _node_exist(frame):
+    node = _format_node(frame)
+    if node in node_set:
+        return True
+    node_set.add(node)
+    return False
+
+
+def _get_subgraph(filename):
+    if filename not in subgraph_set:
+        subgraph_set[filename] = G.add_subgraph(
+            name='cluster' + filename,
+            label=filename
+        )
+    return subgraph_set[filename]
+
+
+def _format_subgraph(frame):
+    filename = frame.f_code.co_filename
+    if filename not in subgraph_set:
+        subgraph_set[filename] = G.add_subgraph(
+            name='cluster' + filename,
+            label=filename
+        )
+
+    node = _format_node(frame)
+    firstlineno = frame.f_code.co_firstlineno
+    function = frame.f_code.co_name
+
+    subgraph_set[filename].add_node(
+        node,
+        label='{0}:{1}'.format(firstlineno, function)
+    )
+
+
+def _format_node(frame):
     return '{0}:{1}:{2}'.format(frame.filename,
                                 frame.firstlineno,
                                 frame.function)
@@ -17,36 +57,19 @@ def cheese(frame=None, slient=False):
     if not frame:
         frame = sys._getframe().f_back
 
-    G = pgv.AGraph(strict=False, directed=True)
 
     stack = []
 
-    node_set = set()
-    subgraph_set = {}
-
     while frame:
-        filename = frame.f_code.co_filename
-        firstlineno = frame.f_code.co_firstlineno
-        function = frame.f_code.co_name
 
-        node = format_node(frame)
-        if node not in node_set:
-            node_set.add(node)
-            if filename not in subgraph_set:
-                subgraph_set[filename] = G.add_subgraph(
-                    name='cluster' + filename,
-                    label=filename
-                )
-            subgraph = subgraph_set[filename]
-            subgraph.add_node(
-                node,
-                label='{0}:{1}'.format(firstlineno, function)
-            )
+        if _node_exist(frame):
+            continue
 
-        stack.append(frame)
+        _format_subgraph(frame)
+
+        stack.insert(0, frame)
         frame = frame.f_back
 
-    stack.reverse()
 
     len_stack = len(stack)
 
@@ -71,15 +94,15 @@ def cheese(frame=None, slient=False):
             color = 'black'
 
         G.add_edge(
-            format_node(start),
-            format_node(end),
+            _format_node(start),
+            _format_node(end),
             color=color,
             ltail=start_subgraph.name,
             lhead=end_subgraph.name,
             label='#{0} at {1}'.format(index + 1, start_lineno)
         )
 
-    fd, name = tempfile.mkstemp('.png')
+    _, name = tempfile.mkstemp('.png')
 
     G.draw(name, prog='dot')
     G.close()
