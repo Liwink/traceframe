@@ -24,6 +24,7 @@ def _format_subgraph_set(stack):
         firstlineno = frame.f_code.co_firstlineno
         function = frame.f_code.co_name
 
+        # Node is inherit str (wow so `G.add_edge(str1, str2)`
         subgraph_set[filename].add_node(
             node,
             label='{0}:{1}'.format(firstlineno, function)
@@ -51,6 +52,19 @@ def _frame_stack(frame):
         frame = frame.f_back
 
 
+def _add_edge(start, end, color, index):
+    start_lineno = start.f_lineno
+
+    G.add_edge(
+        _format_node(start),
+        _format_node(end),
+        color=color,
+        ltail='cluster' + start.f_code.co_filename,
+        lhead='cluster' + end.f_code.co_filename,
+        label='#{0} at {1}'.format(index + 1, start_lineno)
+    )
+
+
 def cheese(frame=None, slient=False):
 
     if not frame:
@@ -68,14 +82,6 @@ def cheese(frame=None, slient=False):
         if index + 1 == len_stack:
             break
 
-        start_filename = start.f_code.co_filename
-        start_lineno = start.f_lineno
-        start_subgraph = subgraph_set[start_filename]
-
-        end = stack[index + 1]
-        end_filename = end.f_code.co_filename
-        end_subgraph = subgraph_set[end_filename]
-
         if index == 0:
             color = 'green'
         elif index == len_stack - 2:
@@ -83,14 +89,7 @@ def cheese(frame=None, slient=False):
         else:
             color = 'black'
 
-        G.add_edge(
-            _format_node(start),
-            _format_node(end),
-            color=color,
-            ltail=start_subgraph.name,
-            lhead=end_subgraph.name,
-            label='#{0} at {1}'.format(index + 1, start_lineno)
-        )
+        _add_edge(start, stack[index + 1], color, index)
 
     _, name = tempfile.mkstemp('.png')
 
