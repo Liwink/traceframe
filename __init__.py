@@ -6,46 +6,40 @@ import webbrowser
 import pygraphviz as pgv
 
 
-subgraph_set = {}
 G = pgv.AGraph(strict=False, directed=True)
 
 
-def _get_subgraph(filename):
-    if filename not in subgraph_set:
-        subgraph_set[filename] = G.add_subgraph(
-            name='cluster' + filename,
-            label=filename
+def _format_subgraph_set(stack):
+    subgraph_set = {}
+
+    for frame in stack:
+        filename = frame.f_code.co_filename
+        if filename not in subgraph_set:
+            subgraph_set[filename] = G.add_subgraph(
+                name='cluster' + filename,
+                label=filename
+            )
+
+        node = _format_node(frame)
+        firstlineno = frame.f_code.co_firstlineno
+        function = frame.f_code.co_name
+
+        subgraph_set[filename].add_node(
+            node,
+            label='{0}:{1}'.format(firstlineno, function)
         )
-    return subgraph_set[filename]
 
-
-def _format_subgraph(frame):
-    filename = frame.f_code.co_filename
-    if filename not in subgraph_set:
-        subgraph_set[filename] = G.add_subgraph(
-            name='cluster' + filename,
-            label=filename
-        )
-
-    node = _format_node(frame)
-    firstlineno = frame.f_code.co_firstlineno
-    function = frame.f_code.co_name
-
-    subgraph_set[filename].add_node(
-        node,
-        label='{0}:{1}'.format(firstlineno, function)
-    )
+    return subgraph_set
 
 
 def _format_node(frame):
-    return '{0}:{1}:{2}'.format(frame.filename,
-                                frame.firstlineno,
-                                frame.function)
+    return '{0}:{1}:{2}'.format(frame.f_code.co_filename,
+                                frame.f_code.co_firstlineno,
+                                frame.f_code.co_name)
 
 
 def _frame_stack(frame):
     node_set = set()
-    stack = []
 
     while frame:
         node = _format_node(frame)
@@ -53,10 +47,9 @@ def _frame_stack(frame):
             continue
         node_set.add(node)
 
-        stack.insert(0, frame)
+        yield frame
         frame = frame.f_back
 
-    return stack
 
 def cheese(frame=None, slient=False):
 
@@ -64,12 +57,11 @@ def cheese(frame=None, slient=False):
         frame = sys._getframe().f_back
 
 
-    stack = _frame_stack(frame)
-
-    for frame in stack:
-        _format_subgraph(frame)
+    stack = list(_frame_stack(frame))
+    subgraph_set = _format_subgraph_set(stack)
 
     len_stack = len(stack)
+    stack.reverse()
 
     for index, start in enumerate(stack):
 
@@ -109,3 +101,4 @@ def cheese(frame=None, slient=False):
         webbrowser.open('file://' + name)
 
     return name
+
